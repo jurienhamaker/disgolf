@@ -13,10 +13,13 @@ type OptionsMap = map[string]*discordgo.ApplicationCommandInteractionDataOption
 // and contains interaction and preprocessed options.
 type Ctx struct {
 	*discordgo.Session `json:"-"`
-	Caller      *Command `json:"caller"`
-	Interaction *discordgo.Interaction `json:"interaction"`
-	Options     OptionsMap `json:"options"`
-	OptionsRaw  []*discordgo.ApplicationCommandInteractionDataOption `json:"options_raw"`
+	Caller             *Command                                             `json:"caller"`
+	MessageComponent   *MessageComponent                                    `json:"message_component"`
+	Interaction        *discordgo.Interaction                               `json:"interaction"`
+	Options            OptionsMap                                           `json:"options"`
+	OptionsRaw         []*discordgo.ApplicationCommandInteractionDataOption `json:"options_raw"`
+
+	MessageComponentOptions map[string]string `json:"message_component_options"`
 
 	remainingHandlers []Handler
 }
@@ -41,7 +44,6 @@ func (ctx *Ctx) String() string {
 	return fmt.Sprintf(`caller: %s guild: %s options: %v`, ctx.Caller.Name, ctx.Interaction.GuildID, ctx.Options)
 }
 
-
 // NewCtx constructs ctx from given parameters.
 func NewCtx(s *discordgo.Session, caller *Command, i *discordgo.Interaction, parent *discordgo.ApplicationCommandInteractionDataOption, handlers []Handler) *Ctx {
 	options := i.ApplicationCommandData().Options
@@ -54,6 +56,19 @@ func NewCtx(s *discordgo.Session, caller *Command, i *discordgo.Interaction, par
 		Interaction: i,
 		Options:     makeOptionMap(options),
 		OptionsRaw:  options,
+
+		remainingHandlers: handlers,
+	}
+}
+
+// NewCtx constructs ctx from given parameters.
+func NewMessageComponentCtx(s *discordgo.Session, caller *MessageComponent, i *discordgo.Interaction, options map[string]string, handlers []Handler) *Ctx {
+	return &Ctx{
+		Session:          s,
+		MessageComponent: caller,
+		Interaction:      i,
+
+		MessageComponentOptions: options,
 
 		remainingHandlers: handlers,
 	}
